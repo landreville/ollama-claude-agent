@@ -14,7 +14,6 @@ class Settings(BaseSettings):
     api_key: str | None = None  # If set, requires Bearer token auth
 
     # Claude Agent SDK settings
-    cwd: str = "."  # Working directory for Claude agent
     default_max_turns: int = 10
 
     # Available Claude models

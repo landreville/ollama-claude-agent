@@ -91,7 +91,6 @@ Configuration is done via environment variables. All variables are prefixed with
 | `OLLAMA_CLAUDE_HOST` | Server bind address | `0.0.0.0` |
 | `OLLAMA_CLAUDE_PORT` | Server port | `11434` |
 | `OLLAMA_CLAUDE_API_KEY` | API key for client authentication | (none - auth disabled if not set) |
-| `OLLAMA_CLAUDE_CWD` | Working directory for Claude Agent | `.` |
 | `OLLAMA_CLAUDE_DEFAULT_MAX_TURNS` | Maximum conversation turns | `10` |
 
 ## API Endpoints

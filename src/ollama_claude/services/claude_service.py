@@ -6,17 +6,33 @@ from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, TextBl
 
 from ..config import settings
 
+# Explicitly list all tools to disallow - no file, web, or system access
+DISALLOWED_TOOLS = [
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Glob",
+    "Grep",
+    "WebFetch",
+    "WebSearch",
+    "NotebookEdit",
+    "TodoWrite",
+    "Task",
+]
+
 
 class ClaudeService:
-    """Service layer for interacting with Claude Agent SDK."""
+    """Service layer for interacting with Claude Agent SDK.
 
-    def __init__(self, cwd: str = "."):
-        """Initialize the Claude service.
+    This service is configured to disable all tools, preventing Claude from
+    accessing files, executing commands, or making web requests. It only
+    processes the input prompt and returns generated text.
+    """
 
-        Args:
-            cwd: Working directory for Claude agent.
-        """
-        self.cwd = cwd
+    def __init__(self):
+        """Initialize the Claude service."""
+        pass
 
     async def generate(
         self,
@@ -43,10 +59,9 @@ class ClaudeService:
             model=model,
             system_prompt=system_prompt,
             max_turns=max_turns,
-            cwd=self.cwd,
-            # Disable tools for simple text generation
+            # Explicitly disable all tools - no file/web/system access
             allowed_tools=[],
-            permission_mode="acceptEdits",
+            disallowed_tools=DISALLOWED_TOOLS,
         )
 
         async for message in query(prompt=prompt, options=options):
@@ -92,9 +107,9 @@ class ClaudeService:
             model=model,
             system_prompt=system_prompt,
             max_turns=max_turns,
-            cwd=self.cwd,
+            # Explicitly disable all tools - no file/web/system access
             allowed_tools=[],
-            permission_mode="acceptEdits",
+            disallowed_tools=DISALLOWED_TOOLS,
         )
 
         async for message in query(prompt=prompt, options=options):
@@ -133,4 +148,4 @@ class ClaudeService:
 
 
 # Singleton instance
-claude_service = ClaudeService(cwd=settings.cwd)
+claude_service = ClaudeService()
