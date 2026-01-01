@@ -21,7 +21,23 @@ This service acts as a bridge between the Ollama API specification and Claude's 
 
 ## Installation
 
-### Using Docker (Recommended)
+### Using Pre-built Docker Image (Recommended)
+
+The easiest way to get started is using the pre-built image from GitHub Container Registry:
+
+```bash
+docker run -d --name ollama-claude \
+  -p 11434:11434 \
+  -e OLLAMA_CLAUDE_API_KEY=your-secret-api-key \
+  -v ~/.claude/.credentials.json:/home/appuser/.claude/.credentials.json:ro \
+  ghcr.io/landreville/ollama-claude-agent:latest
+```
+
+> **Note:** The `-v` flag mounts your Claude Code credentials into the container. This is required for the Claude Agent SDK to authenticate with Anthropic's API.
+
+### Building Docker Image Locally
+
+If you prefer to build the image yourself:
 
 1. **Build the image:**
 
@@ -38,8 +54,6 @@ This service acts as a bridge between the Ollama API specification and Claude's 
      -v ~/.claude/.credentials.json:/home/appuser/.claude/.credentials.json:ro \
      ollama-claude-agent
    ```
-
-   > **Note:** The `-v` flag mounts your Claude Code credentials into the container. This is required for the Claude Agent SDK to authenticate with Anthropic's API.
 
 ### Using pip (Local Development)
 
@@ -329,6 +343,25 @@ print(response.json()["message"]["content"])
 4. Add authentication header if required
 
 ## Docker Compose
+
+Using the pre-built image:
+
+```yaml
+version: '3.8'
+
+services:
+  ollama-claude:
+    image: ghcr.io/landreville/ollama-claude-agent:latest
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_CLAUDE_API_KEY=your-secret-api-key
+    volumes:
+      - ~/.claude/.credentials.json:/home/appuser/.claude/.credentials.json:ro
+    restart: unless-stopped
+```
+
+Or build from source:
 
 ```yaml
 version: '3.8'
