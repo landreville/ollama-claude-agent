@@ -1,11 +1,8 @@
 """Router for GET /api/tags and /api/ps endpoints."""
 
 import hashlib
-import logging
-import time
 from datetime import datetime, timedelta, timezone
 
-from anthropic import Anthropic
 from fastapi import APIRouter, Depends
 
 from ..auth import verify_token
@@ -17,43 +14,10 @@ from ..models import (
     TagsResponse,
 )
 
-logger = logging.getLogger(__name__)
-
-# Cache for models list (model_id -> display_name)
-_models_cache: dict[str, str] = {}
-_cache_timestamp: float = 0
-_CACHE_TTL_SECONDS = 3600  # Refresh cache every hour
-
 router = APIRouter()
 
-
-def get_available_models() -> dict[str, str]:
-    """Fetch available models from the Anthropic API with caching.
-
-    Returns:
-        Dict mapping model ID to display name.
-    """
-    global _models_cache, _cache_timestamp
-
-    current_time = time.time()
-    if _models_cache and (current_time - _cache_timestamp) < _CACHE_TTL_SECONDS:
-        return _models_cache
-
-    try:
-        client = Anthropic()
-        models: dict[str, str] = {}
-        for model in client.models.list():
-            models[model.id] = model.display_name
-        _models_cache = models
-        _cache_timestamp = current_time
-        logger.info(f"Fetched {len(models)} models from Anthropic API")
-        return models
-    except Exception as e:
-        logger.error(f"Failed to fetch models from Anthropic API: {e}")
-        # Return cached models if available, otherwise empty
-        if _models_cache:
-            return _models_cache
-        return {}
+# Available models using Claude Agent SDK aliases
+AVAILABLE_MODELS = ["opus", "sonnet", "haiku"]
 
 
 def generate_model_digest(model_name: str) -> str:
@@ -124,9 +88,8 @@ async def list_tags(
     Returns:
         List of available Claude models.
     """
-    available_models = get_available_models()
     models = []
-    for model_id in available_models:
+    for model_id in AVAILABLE_MODELS:
         models.append(
             ModelInfo(
                 name=model_id,
@@ -157,11 +120,10 @@ async def list_loaded_models(
     """
     # Claude models are always "available" since they're API-based
     # We return them all with a far-future expiry
-    available_models = get_available_models()
     models = []
     expires_at = (datetime.now(timezone.utc) + timedelta(days=365)).isoformat()
 
-    for model_id in available_models:
+    for model_id in AVAILABLE_MODELS:
         models.append(
             LoadedModelInfo(
                 name=model_id,
