@@ -16,17 +16,6 @@ class Settings(BaseSettings):
     # Claude Agent SDK settings
     default_max_turns: int = 10
 
-    # Available Claude models
-    available_models: list[str] = [
-        "claude-sonnet-4-20250514",
-        "claude-opus-4-20250514",
-        "claude-3-5-haiku-20241022",
-        "claude-3-5-sonnet-20241022",
-        "claude-3-opus-20240229",
-        "claude-3-sonnet-20240229",
-        "claude-3-haiku-20240307",
-    ]
-
     # Default model if not specified
     default_model: str = "claude-sonnet-4-20250514"
 
