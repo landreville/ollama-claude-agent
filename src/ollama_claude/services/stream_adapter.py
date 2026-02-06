@@ -173,3 +173,158 @@ def build_chat_response(
         "eval_count": 1,
         "eval_duration": duration_ns,
     }
+
+
+# === OpenAI-Compatible Stream Adapters ===
+
+
+def get_unix_timestamp() -> int:
+    """Get current Unix timestamp as integer."""
+    return int(time.time())
+
+
+async def adapt_openai_chat_stream(
+    claude_stream: AsyncIterator[str],
+    model: str,
+    request_id: str,
+) -> AsyncIterator[str]:
+    """Adapt Claude Agent SDK stream to OpenAI /v1/chat/completions SSE format.
+
+    Args:
+        claude_stream: Async iterator yielding text chunks from Claude.
+        model: The model name for the response.
+        request_id: Unique ID for this request.
+
+    Yields:
+        SSE lines in OpenAI format.
+    """
+    created = get_unix_timestamp()
+
+    # First chunk includes role
+    first = True
+    async for text_chunk in claude_stream:
+        delta = {"content": text_chunk}
+        if first:
+            delta["role"] = "assistant"
+            first = False
+
+        chunk = {
+            "id": request_id,
+            "object": "chat.completion.chunk",
+            "created": created,
+            "model": model,
+            "choices": [{"index": 0, "delta": delta, "finish_reason": None}],
+        }
+        yield f"data: {json.dumps(chunk)}\n\n"
+
+    # Final chunk with finish_reason
+    final_chunk = {
+        "id": request_id,
+        "object": "chat.completion.chunk",
+        "created": created,
+        "model": model,
+        "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+    }
+    yield f"data: {json.dumps(final_chunk)}\n\n"
+    yield "data: [DONE]\n\n"
+
+
+async def adapt_openai_completion_stream(
+    claude_stream: AsyncIterator[str],
+    model: str,
+    request_id: str,
+) -> AsyncIterator[str]:
+    """Adapt Claude Agent SDK stream to OpenAI /v1/completions SSE format.
+
+    Args:
+        claude_stream: Async iterator yielding text chunks from Claude.
+        model: The model name for the response.
+        request_id: Unique ID for this request.
+
+    Yields:
+        SSE lines in OpenAI format.
+    """
+    created = get_unix_timestamp()
+
+    async for text_chunk in claude_stream:
+        chunk = {
+            "id": request_id,
+            "object": "text_completion",
+            "created": created,
+            "model": model,
+            "choices": [{"index": 0, "text": text_chunk, "finish_reason": None}],
+        }
+        yield f"data: {json.dumps(chunk)}\n\n"
+
+    # Final chunk with finish_reason
+    final_chunk = {
+        "id": request_id,
+        "object": "text_completion",
+        "created": created,
+        "model": model,
+        "choices": [{"index": 0, "text": "", "finish_reason": "stop"}],
+    }
+    yield f"data: {json.dumps(final_chunk)}\n\n"
+    yield "data: [DONE]\n\n"
+
+
+def build_openai_chat_response(
+    text: str,
+    model: str,
+    request_id: str,
+) -> dict:
+    """Build non-streaming OpenAI chat completion response.
+
+    Args:
+        text: The complete response text.
+        model: The model name.
+        request_id: Unique ID for this request.
+
+    Returns:
+        Response dictionary in OpenAI format.
+    """
+    return {
+        "id": request_id,
+        "object": "chat.completion",
+        "created": get_unix_timestamp(),
+        "model": model,
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": text},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+    }
+
+
+def build_openai_completion_response(
+    text: str,
+    model: str,
+    request_id: str,
+) -> dict:
+    """Build non-streaming OpenAI text completion response.
+
+    Args:
+        text: The complete response text.
+        model: The model name.
+        request_id: Unique ID for this request.
+
+    Returns:
+        Response dictionary in OpenAI format.
+    """
+    return {
+        "id": request_id,
+        "object": "text_completion",
+        "created": get_unix_timestamp(),
+        "model": model,
+        "choices": [
+            {
+                "index": 0,
+                "text": text,
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+    }
