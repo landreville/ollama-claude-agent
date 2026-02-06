@@ -148,3 +148,147 @@ class PSResponse(BaseModel):
     """Response for GET /api/ps."""
 
     models: list[LoadedModelInfo]
+
+
+# === OpenAI-Compatible Endpoint Models ===
+
+
+class OpenAIChatMessage(BaseModel):
+    """Message in OpenAI chat request/response."""
+
+    role: Literal["system", "user", "assistant"]
+    content: str
+
+
+class OpenAIChatRequest(BaseModel):
+    """Request body for POST /v1/chat/completions."""
+
+    model: str
+    messages: list[OpenAIChatMessage]
+    max_tokens: int | None = None
+    temperature: float | None = None
+    top_p: float | None = None
+    stream: bool = False
+    stop: str | list[str] | None = None
+    frequency_penalty: float | None = None
+    presence_penalty: float | None = None
+    response_format: dict[str, Any] | None = None
+    seed: int | None = None
+
+
+class OpenAICompletionRequest(BaseModel):
+    """Request body for POST /v1/completions."""
+
+    model: str
+    prompt: str
+    max_tokens: int | None = None
+    temperature: float | None = None
+    top_p: float | None = None
+    stream: bool = False
+    stop: str | list[str] | None = None
+    suffix: str | None = None
+
+
+class OpenAIUsage(BaseModel):
+    """Token usage in OpenAI responses."""
+
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+
+
+class OpenAIChatChoice(BaseModel):
+    """Choice in OpenAI chat completion response."""
+
+    index: int = 0
+    message: OpenAIChatMessage
+    finish_reason: str = "stop"
+
+
+class OpenAIChatResponse(BaseModel):
+    """Response for POST /v1/chat/completions (non-streaming)."""
+
+    id: str
+    object: str = "chat.completion"
+    created: int
+    model: str
+    choices: list[OpenAIChatChoice]
+    usage: OpenAIUsage = OpenAIUsage()
+
+
+class OpenAIChatStreamDelta(BaseModel):
+    """Delta in OpenAI chat streaming chunk."""
+
+    role: str | None = None
+    content: str | None = None
+
+
+class OpenAIChatStreamChoice(BaseModel):
+    """Choice in OpenAI chat streaming chunk."""
+
+    index: int = 0
+    delta: OpenAIChatStreamDelta
+    finish_reason: str | None = None
+
+
+class OpenAIChatStreamChunk(BaseModel):
+    """Streaming chunk for POST /v1/chat/completions."""
+
+    id: str
+    object: str = "chat.completion.chunk"
+    created: int
+    model: str
+    choices: list[OpenAIChatStreamChoice]
+
+
+class OpenAICompletionChoice(BaseModel):
+    """Choice in OpenAI text completion response."""
+
+    index: int = 0
+    text: str
+    finish_reason: str = "stop"
+
+
+class OpenAICompletionResponse(BaseModel):
+    """Response for POST /v1/completions (non-streaming)."""
+
+    id: str
+    object: str = "text_completion"
+    created: int
+    model: str
+    choices: list[OpenAICompletionChoice]
+    usage: OpenAIUsage = OpenAIUsage()
+
+
+class OpenAICompletionStreamChoice(BaseModel):
+    """Choice in OpenAI text completion streaming chunk."""
+
+    index: int = 0
+    text: str
+    finish_reason: str | None = None
+
+
+class OpenAICompletionStreamChunk(BaseModel):
+    """Streaming chunk for POST /v1/completions."""
+
+    id: str
+    object: str = "text_completion"
+    created: int
+    model: str
+    choices: list[OpenAICompletionStreamChoice]
+
+
+class OpenAIModel(BaseModel):
+    """Model object in OpenAI /v1/models response."""
+
+    id: str
+    object: str = "model"
+    created: int
+    owned_by: str = "anthropic"
+
+
+class OpenAIModelList(BaseModel):
+    """Response for GET /v1/models."""
+
+    object: str = "list"
+    data: list[OpenAIModel]
