@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .config import settings
-from .routers import chat, generate, models
+from .routers import chat, generate, models, openai_chat, openai_completions, openai_models
 
 app = FastAPI(
     title="Ollama-Claude Bridge",
@@ -27,6 +27,9 @@ app.add_middleware(
 app.include_router(generate.router)
 app.include_router(chat.router)
 app.include_router(models.router)
+app.include_router(openai_chat.router)
+app.include_router(openai_completions.router)
+app.include_router(openai_models.router)
 
 
 @app.get("/")
