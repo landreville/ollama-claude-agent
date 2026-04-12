@@ -1,6 +1,7 @@
 """Service layer for interacting with Claude Agent SDK."""
 
 import logging
+import sys
 from collections.abc import AsyncIterator
 
 from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, TextBlock
@@ -8,6 +9,11 @@ from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, TextBl
 from ..config import settings
 
 logger = logging.getLogger(__name__)
+
+
+def _stderr_handler(line: str) -> None:
+    """Write CLI stderr to our stderr immediately, bypassing log buffering."""
+    print(f"[claude-cli] {line}", file=sys.stderr, flush=True)
 
 
 class ClaudeService:
@@ -43,20 +49,23 @@ class ClaudeService:
         if max_turns is None:
             max_turns = settings.default_max_turns
 
+        logger.info("generate: model=%s system_prompt_len=%s", model, len(system_prompt or ""))
         options = ClaudeAgentOptions(
             model=model,
             system_prompt=system_prompt,
             max_turns=max_turns,
-            # Disable all tools — passes --tools "" to the CLI.
-            # allowed_tools=[] is falsy and never adds the flag; tools=[] does.
-            # This prevents the model from attempting tool use (which triggers
-            # Claude Code "extra usage" billing).
+            # Disable all built-in tools — passes --tools "" to the CLI.
             tools=[],
             # Don't load user-level settings (~/.claude/settings.json) so that
             # personal hooks don't run (and fail) inside the Docker container.
             setting_sources=["project", "local"],
-            # Surface any CLI subprocess errors for debugging.
-            stderr=lambda line: logger.warning("Claude CLI: %s", line),
+            # Ignore any MCP server configs (user settings, account MCPs).
+            # The claude.ai MCP servers (Gmail, Calendar, etc.) are loaded from
+            # account credentials and fail inside Docker, causing exit code 1.
+            # --strict-mcp-config with no --mcp-config means: no MCP servers.
+            extra_args={"strict-mcp-config": None},
+            # Write CLI stderr immediately to our stderr for diagnostics.
+            stderr=_stderr_handler,
         )
 
         async for message in query(prompt=prompt, options=options):
@@ -98,20 +107,28 @@ class ClaudeService:
         # Build the prompt from conversation history
         prompt = self._format_conversation(conversation_messages)
 
+        logger.info(
+            "chat: model=%s msgs=%d system_prompt_len=%s",
+            model,
+            len(conversation_messages),
+            len(system_prompt or ""),
+        )
         options = ClaudeAgentOptions(
             model=model,
             system_prompt=system_prompt,
             max_turns=max_turns,
-            # Disable all tools — passes --tools "" to the CLI.
-            # allowed_tools=[] is falsy and never adds the flag; tools=[] does.
-            # This prevents the model from attempting tool use (which triggers
-            # Claude Code "extra usage" billing).
+            # Disable all built-in tools — passes --tools "" to the CLI.
             tools=[],
             # Don't load user-level settings (~/.claude/settings.json) so that
             # personal hooks don't run (and fail) inside the Docker container.
             setting_sources=["project", "local"],
-            # Surface any CLI subprocess errors for debugging.
-            stderr=lambda line: logger.warning("Claude CLI: %s", line),
+            # Ignore any MCP server configs (user settings, account MCPs).
+            # The claude.ai MCP servers (Gmail, Calendar, etc.) are loaded from
+            # account credentials and fail inside Docker, causing exit code 1.
+            # --strict-mcp-config with no --mcp-config means: no MCP servers.
+            extra_args={"strict-mcp-config": None},
+            # Write CLI stderr immediately to our stderr for diagnostics.
+            stderr=_stderr_handler,
         )
 
         async for message in query(prompt=prompt, options=options):
