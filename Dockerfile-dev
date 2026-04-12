@@ -6,6 +6,7 @@
 #     -p 11434:11434 \
 #     -e OLLAMA_CLAUDE_API_KEY=your-secret-api-key \
 #     -v $(pwd)/src:/app/src \
+#     -v $(pwd)/pyproject.toml:/app/pyproject.toml \
 #     -v ~/.claude/.credentials.json:/home/appuser/.claude/.credentials.json:ro \
 #     ollama-claude-agent-dev
 
@@ -25,16 +26,17 @@ RUN npm install -g @anthropic-ai/claude-code
 # Set working directory
 WORKDIR /app
 
-# Install Python dependencies in editable mode.
-# src/ is copied here so hatchling can complete the editable install and write
-# the .pth file pointing at /app/src.  The volume mount at runtime overlays
-# /app/src with the live source, so edits are picked up without rebuilding.
+# Copy project metadata only — dependencies are pre-installed at build time
+# as a cache layer, then re-installed at startup from the mounted pyproject.toml
+# so any new deps added since the image was built are always picked up.
 COPY pyproject.toml README.md ./
-COPY src/ src/
 RUN pip install --no-cache-dir -e ".[dev]"
+
+COPY entrypoint-dev.sh /entrypoint-dev.sh
 
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+RUN chmod +x /entrypoint-dev.sh
 
 # Create .claude directory for credentials mount
 RUN mkdir -p /home/appuser/.claude && chown -R appuser:appuser /home/appuser/.claude
@@ -46,7 +48,6 @@ EXPOSE 11434
 ENV OLLAMA_CLAUDE_HOST=0.0.0.0
 ENV OLLAMA_CLAUDE_PORT=11434
 
-# Run uvicorn with --reload so changes to mounted src/ are picked up automatically
-CMD ["python", "-m", "uvicorn", "ollama_claude.main:app", \
-     "--host", "0.0.0.0", "--port", "11434", \
-     "--reload", "--reload-dir", "/app/src"]
+# entrypoint-dev.sh runs `pip install -e .[dev]` at startup so new deps and
+# import paths are always current, then launches uvicorn with --reload.
+ENTRYPOINT ["/entrypoint-dev.sh"]
