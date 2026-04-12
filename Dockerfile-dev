@@ -23,22 +23,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Claude CLI globally
 RUN npm install -g @anthropic-ai/claude-code
 
-# Set working directory
 WORKDIR /app
 
-# Copy project metadata only — dependencies are pre-installed at build time
-# as a cache layer, then re-installed at startup from the mounted pyproject.toml
-# so any new deps added since the image was built are always picked up.
+# Pre-install dependencies as a cache layer. src/ is copied so hatchling can
+# resolve the package metadata; the volume mount will overlay it at runtime.
 COPY pyproject.toml README.md ./
+COPY src/ src/
 RUN pip install --no-cache-dir -e ".[dev]"
 
 COPY entrypoint-dev.sh /entrypoint-dev.sh
 
-# Create non-root user for security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 RUN chmod +x /entrypoint-dev.sh
-
-# Create .claude directory for credentials mount
 RUN mkdir -p /home/appuser/.claude && chown -R appuser:appuser /home/appuser/.claude
 
 USER appuser
@@ -48,6 +44,8 @@ EXPOSE 11434
 ENV OLLAMA_CLAUDE_HOST=0.0.0.0
 ENV OLLAMA_CLAUDE_PORT=11434
 
-# entrypoint-dev.sh runs `pip install -e .[dev]` at startup so new deps and
-# import paths are always current, then launches uvicorn with --reload.
+# PYTHONPATH makes ollama_claude importable directly from the mounted src/,
+# independent of editable-install .pth mechanics and appuser write permissions.
+ENV PYTHONPATH=/app/src
+
 ENTRYPOINT ["/entrypoint-dev.sh"]
