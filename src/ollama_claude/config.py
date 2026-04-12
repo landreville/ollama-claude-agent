@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     api_key: str | None = None  # If set, requires Bearer token auth
 
     # Claude Agent SDK settings
-    default_max_turns: int = 10
+    default_max_turns: int = 1
 
     # Default model if not specified
     default_model: str = "claude-sonnet-4-20250514"

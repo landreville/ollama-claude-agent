@@ -9,21 +9,6 @@ from ..config import settings
 
 logger = logging.getLogger(__name__)
 
-# Explicitly list all tools to disallow - no file, web, or system access
-DISALLOWED_TOOLS = [
-    "Read",
-    "Write",
-    "Edit",
-    "Bash",
-    "Glob",
-    "Grep",
-    "WebFetch",
-    "WebSearch",
-    "NotebookEdit",
-    "TodoWrite",
-    "Task",
-]
-
 
 class ClaudeService:
     """Service layer for interacting with Claude Agent SDK.
@@ -62,9 +47,11 @@ class ClaudeService:
             model=model,
             system_prompt=system_prompt,
             max_turns=max_turns,
-            # Explicitly disable all tools - no file/web/system access
-            allowed_tools=[],
-            disallowed_tools=DISALLOWED_TOOLS,
+            # Disable all tools — passes --tools "" to the CLI.
+            # allowed_tools=[] is falsy and never adds the flag; tools=[] does.
+            # This prevents the model from attempting tool use (which triggers
+            # Claude Code "extra usage" billing).
+            tools=[],
             # Don't load user-level settings (~/.claude/settings.json) so that
             # personal hooks don't run (and fail) inside the Docker container.
             setting_sources=["project", "local"],
@@ -115,9 +102,11 @@ class ClaudeService:
             model=model,
             system_prompt=system_prompt,
             max_turns=max_turns,
-            # Explicitly disable all tools - no file/web/system access
-            allowed_tools=[],
-            disallowed_tools=DISALLOWED_TOOLS,
+            # Disable all tools — passes --tools "" to the CLI.
+            # allowed_tools=[] is falsy and never adds the flag; tools=[] does.
+            # This prevents the model from attempting tool use (which triggers
+            # Claude Code "extra usage" billing).
+            tools=[],
             # Don't load user-level settings (~/.claude/settings.json) so that
             # personal hooks don't run (and fail) inside the Docker container.
             setting_sources=["project", "local"],
