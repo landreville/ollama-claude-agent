@@ -25,8 +25,12 @@ RUN npm install -g @anthropic-ai/claude-code
 # Set working directory
 WORKDIR /app
 
-# Install Python dependencies (without source — source is mounted at runtime)
+# Install Python dependencies in editable mode.
+# src/ is copied here so hatchling can complete the editable install and write
+# the .pth file pointing at /app/src.  The volume mount at runtime overlays
+# /app/src with the live source, so edits are picked up without rebuilding.
 COPY pyproject.toml README.md ./
+COPY src/ src/
 RUN pip install --no-cache-dir -e ".[dev]"
 
 # Create non-root user for security
