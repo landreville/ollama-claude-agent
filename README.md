@@ -27,7 +27,7 @@ The easiest way to get started is using the pre-built image from GitHub Containe
 
 ```bash
 docker run -d --name ollama-claude \
-  -p 11435:11435 \
+  -p 11434:11434 \
   -e OLLAMA_CLAUDE_API_KEY=your-secret-api-key \
   -v ~/.claude/.credentials.json:/home/appuser/.claude/.credentials.json:ro \
   ghcr.io/landreville/ollama-claude-agent:latest
@@ -49,7 +49,7 @@ If you prefer to build the image yourself:
 
    ```bash
    docker run -d --name ollama-claude \
-     -p 11435:11435 \
+     -p 11434:11434 \
      -e OLLAMA_CLAUDE_API_KEY=your-secret-api-key \
      -v ~/.claude/.credentials.json:/home/appuser/.claude/.credentials.json:ro \
      ollama-claude-agent
@@ -89,7 +89,7 @@ Configuration is done via environment variables. All variables are prefixed with
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `OLLAMA_CLAUDE_HOST` | Server bind address | `0.0.0.0` |
-| `OLLAMA_CLAUDE_PORT` | Server port | `11435` |
+| `OLLAMA_CLAUDE_PORT` | Server port | `11434` |
 | `OLLAMA_CLAUDE_API_KEY` | API key for client authentication | (none - auth disabled if not set) |
 | `OLLAMA_CLAUDE_DEFAULT_MAX_TURNS` | Maximum conversation turns | `10` |
 
@@ -287,10 +287,10 @@ The following Claude models are available:
 ```bash
 # List models
 curl -H "Authorization: Bearer your-api-key" \
-  http://localhost:11435/api/tags
+  http://localhost:11434/api/tags
 
 # Chat completion
-curl -X POST http://localhost:11435/api/chat \
+curl -X POST http://localhost:11434/api/chat \
   -H "Authorization: Bearer your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -300,7 +300,7 @@ curl -X POST http://localhost:11435/api/chat \
   }'
 
 # Generate completion
-curl -X POST http://localhost:11435/api/generate \
+curl -X POST http://localhost:11434/api/generate \
   -H "Authorization: Bearer your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -315,7 +315,7 @@ curl -X POST http://localhost:11435/api/generate \
 ```python
 import requests
 
-BASE_URL = "http://localhost:11435"
+BASE_URL = "http://localhost:11434"
 HEADERS = {
     "Authorization": "Bearer your-api-key",
     "Content-Type": "application/json"
@@ -337,7 +337,7 @@ print(response.json()["message"]["content"])
 ### N8N Integration
 
 1. Add an "Ollama" node to your workflow
-2. Configure the base URL: `http://your-server:11435`
+2. Configure the base URL: `http://your-server:11434`
 3. Set the model to a Claude model ID (e.g., `claude-sonnet-4-20250514`)
 4. Add authentication header if required
 
@@ -352,7 +352,7 @@ services:
   ollama-claude:
     image: ghcr.io/landreville/ollama-claude-agent:latest
     ports:
-      - "11435:11435"
+      - "11434:11434"
     environment:
       - OLLAMA_CLAUDE_API_KEY=your-secret-api-key
     volumes:
@@ -369,7 +369,7 @@ services:
   ollama-claude:
     build: .
     ports:
-      - "11435:11435"
+      - "11434:11434"
     environment:
       - OLLAMA_CLAUDE_API_KEY=your-secret-api-key
     volumes:
@@ -410,7 +410,7 @@ mypy src/
 
 You need to include the `Authorization` header with your API key:
 ```bash
-curl -H "Authorization: Bearer your-api-key" http://localhost:11435/api/tags
+curl -H "Authorization: Bearer your-api-key" http://localhost:11434/api/tags
 ```
 
 ### "Claude Code not found"

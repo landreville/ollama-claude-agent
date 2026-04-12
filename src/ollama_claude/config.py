@@ -8,7 +8,7 @@ class Settings(BaseSettings):
 
     # Server settings
     host: str = "0.0.0.0"
-    port: int = 11435
+    port: int = 11434
 
     # Authentication
     api_key: str | None = None  # If set, requires Bearer token auth

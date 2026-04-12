@@ -32,11 +32,11 @@ RUN mkdir -p /home/appuser/.claude && chown -R appuser:appuser /home/appuser/.cl
 USER appuser
 
 # Expose the default Ollama port
-EXPOSE 11435
+EXPOSE 11434
 
 # Set environment variables
 ENV OLLAMA_CLAUDE_HOST=0.0.0.0
-ENV OLLAMA_CLAUDE_PORT=11435
+ENV OLLAMA_CLAUDE_PORT=11434
 
 # Run the application
 CMD ["ollama-claude"]
