@@ -2,7 +2,7 @@
 
 from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 # === Generate Endpoint Models ===
@@ -157,7 +157,18 @@ class OpenAIChatMessage(BaseModel):
     """Message in OpenAI chat request/response."""
 
     role: Literal["system", "user", "assistant"]
-    content: str
+    content: str | list[Any]
+
+    @field_validator("content", mode="before")
+    @classmethod
+    def normalize_content(cls, v: Any) -> str:
+        if isinstance(v, list):
+            return "".join(
+                block.get("text", "")
+                for block in v
+                if isinstance(block, dict) and block.get("type") == "text"
+            )
+        return v
 
 
 class OpenAIChatRequest(BaseModel):

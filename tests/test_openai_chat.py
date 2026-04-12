@@ -69,3 +69,58 @@ async def test_chat_completions_streaming(client):
     lines = response.text.strip().split("\n\n")
     # Should have: role+content chunk, content chunk, finish chunk, [DONE]
     assert lines[-1] == "data: [DONE]"
+
+
+async def test_chat_completions_content_blocks(client):
+    """POST /v1/chat/completions accepts content as array of content blocks."""
+    with patch(
+        "ollama_claude.routers.openai_chat.claude_service"
+    ) as mock_service:
+        mock_service.chat = MagicMock(return_value=_mock_chunks())
+
+        response = await client.post(
+            "/v1/chat/completions",
+            json={
+                "model": "sonnet",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "say "},
+                            {"type": "text", "text": "hello"},
+                        ],
+                    }
+                ],
+            },
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["object"] == "chat.completion"
+
+
+async def test_chat_completions_mixed_content(client):
+    """POST /v1/chat/completions handles mixed content blocks (e.g. with system prompt block)."""
+    with patch(
+        "ollama_claude.routers.openai_chat.claude_service"
+    ) as mock_service:
+        mock_service.chat = MagicMock(return_value=_mock_chunks())
+
+        response = await client.post(
+            "/v1/chat/completions",
+            json={
+                "model": "sonnet",
+                "messages": [
+                    {"role": "system", "content": "You are helpful."},
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "system context"},
+                            {"type": "text", "text": "say hello"},
+                        ],
+                    },
+                ],
+            },
+        )
+
+    assert response.status_code == 200
