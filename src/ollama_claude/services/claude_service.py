@@ -1,10 +1,13 @@
 """Service layer for interacting with Claude Agent SDK."""
 
+import logging
 from collections.abc import AsyncIterator
 
 from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, TextBlock
 
 from ..config import settings
+
+logger = logging.getLogger(__name__)
 
 # Explicitly list all tools to disallow - no file, web, or system access
 DISALLOWED_TOOLS = [
@@ -62,6 +65,11 @@ class ClaudeService:
             # Explicitly disable all tools - no file/web/system access
             allowed_tools=[],
             disallowed_tools=DISALLOWED_TOOLS,
+            # Don't load user-level settings (~/.claude/settings.json) so that
+            # personal hooks don't run (and fail) inside the Docker container.
+            setting_sources=["project", "local"],
+            # Surface any CLI subprocess errors for debugging.
+            stderr=lambda line: logger.warning("Claude CLI: %s", line),
         )
 
         async for message in query(prompt=prompt, options=options):
@@ -110,6 +118,11 @@ class ClaudeService:
             # Explicitly disable all tools - no file/web/system access
             allowed_tools=[],
             disallowed_tools=DISALLOWED_TOOLS,
+            # Don't load user-level settings (~/.claude/settings.json) so that
+            # personal hooks don't run (and fail) inside the Docker container.
+            setting_sources=["project", "local"],
+            # Surface any CLI subprocess errors for debugging.
+            stderr=lambda line: logger.warning("Claude CLI: %s", line),
         )
 
         async for message in query(prompt=prompt, options=options):
